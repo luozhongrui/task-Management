@@ -60,9 +60,8 @@ func main() {
 	if port == "" {
 		port = "5000"
 	}
-	if os.Getenv("ENV") != "devlopment" {
-		app.Static("/", "./client/dist")
-	}
+
+	app.Static("/", "./client/dist")
 
 	log.Fatal(app.Listen("0.0.0.0:" + port))
 
