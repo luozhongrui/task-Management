@@ -1,29 +1,37 @@
-# 第一阶段：构建前端
-FROM node:16-alpine AS frontend-builder
-WORKDIR /client
+# Build stage
+FROM node:20-alpine AS client-builder
+WORKDIR /app/client
+COPY client/package*.json ./
+RUN npm install
+COPY client .
+RUN npm run build
 
-# 第二阶段：构建 Go 后端
-FROM golang:1.23.5-alpine AS backend-builder
-
-WORKDIR /
-# 复制 Go 模块文件
-COPY go.mod go.sum ./
-
-# 下载依赖
-RUN go mod download
-# 复制项目源代码（包括 client 文件夹，以便后端可以服务静态文件）
-COPY . .
-# 编译后端可执行文件（假设生成的二进制文件名为 main）
-RUN go build -o main .
-
-# 第三阶段：构建最终镜像
-FROM alpine:latest
+FROM golang:1.23-alpine AS server-builder
 WORKDIR /app
-# 从后端构建阶段复制可执行文件
-COPY --from=backend-builder /main .
-# 从前端构建阶段复制构建好的静态文件到后端指定目录（这里假设后端会提供静态文件服务）
-COPY --from=frontend-builder /client/dist ./client/dist
-# 设置必要的环境变量，例如端口
-ENV PORT=3000
-EXPOSE 3000
-CMD ["./main"]
+COPY go.* ./
+RUN go mod download
+COPY . .
+COPY --from=client-builder /app/client/dist ./client/dist
+
+# Install Air
+RUN go install github.com/air-verse/air@latest
+
+
+FROM golang:1.23-alpine
+WORKDIR /app
+
+# Copy Air config
+COPY air.toml .
+
+# Copy necessary files from builders
+COPY --from=server-builder /go/bin/air /bin/air
+COPY --from=server-builder /app/client/dist ./client/dist
+COPY --from=server-builder /app/go.mod /app/go.sum ./
+COPY --from=server-builder /app/*.go ./
+
+# Install necessary dependencies
+RUN apk add --no-cache libc6-compat
+
+EXPOSE 5000
+
+CMD ["air", "-c", ".air.toml"]
