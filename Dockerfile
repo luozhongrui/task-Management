@@ -34,4 +34,4 @@ RUN apk add --no-cache libc6-compat
 
 EXPOSE 5000
 
-CMD ["air", "-c", "air.toml"]
+CMD ["air"]
