@@ -1,10 +1,3 @@
-# 第一阶段：构建前端
-FROM node:16-alpine AS frontend-builder
-WORKDIR /app/client
-# 安装依赖并构建生产版本（假设使用 npm）
-RUN npm install && npm run build
-
-# 第二阶段：构建 Go 后端
 FROM golang:1.18-alpine AS backend-builder
 WORKDIR /app
 # 复制 Go 模块文件
