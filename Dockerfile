@@ -1,9 +1,14 @@
-FROM golang:1.18-alpine AS backend-builder
+# 第一阶段：构建前端
+FROM node:16-alpine AS frontend-builder
+WORKDIR /app/client
+
+# 第二阶段：构建 Go 后端
+FROM golang:1.23.5-alpine AS backend-builder
+
 WORKDIR /app
 # 复制 Go 模块文件
 COPY go.mod go.sum ./
-# 修改 go.mod 中的 Go 版本，将 "go 1.23.5" 替换为 "go 1.23"
-RUN sed -i 's/go 1\.23\.5/go 1.23/' go.mod
+
 # 下载依赖
 RUN go mod download
 # 复制项目源代码（包括 client 文件夹，以便后端可以服务静态文件）
